@@ -1,0 +1,110 @@
+<div class="container">
+  <div class="row">
+    <div class="col-md-8 mx-auto">
+      <h2 class="mb-4">News Feed</h2>
+      
+      <!-- Create post form for logged in users -->
+      <div *ngIf="authService.currentUserValue" class="card mb-4">
+        <div class="card-body">
+          <form [formGroup]="postForm" (ngSubmit)="createPost()">
+            <div class="mb-3">
+              <label for="content" class="form-label">Share something with your friends</label>
+              <textarea formControlName="content" class="form-control" rows="3" placeholder="What's on your mind?"></textarea>
+            </div>
+            
+            <!-- Image preview -->
+            <div *ngIf="previewUrl" class="mb-3">
+              <div class="position-relative">
+                <img [src]="previewUrl" class="img-fluid rounded" style="max-height: 200px;">
+                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2" 
+                        (click)="removeSelectedFile()">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <label class="btn btn-outline-secondary btn-sm me-2 mb-0">
+                  <i class="bi bi-image me-1"></i> Add Photo
+                  <input type="file" accept="image/*" (change)="onFileSelected($event)" 
+                         style="display: none;">
+                </label>
+              </div>
+              <button type="submit" [disabled]="postForm.invalid || submitting" class="btn btn-primary">
+                <span *ngIf="submitting" class="spinner-border spinner-border-sm me-1"></span>
+                Post
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Message for users not logged in -->
+      <div *ngIf="!authService.currentUserValue" class="alert alert-info mb-4">
+        <p class="mb-0">Please <a routerLink="/login">login</a> or <a routerLink="/register">register</a> to create posts and interact with others.</p>
+      </div>
+      
+      <!-- Loading indicator -->
+      <div *ngIf="loading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+      
+      <!-- Error message -->
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+      
+      <!-- No posts message -->
+      <div *ngIf="posts.length === 0 && !loading" class="text-center my-5">
+        <p class="lead">No posts to display.</p>
+      </div>
+      
+      <!-- Post list -->
+      <div *ngFor="let post of posts" class="card mb-4">
+        <div class="card-header d-flex align-items-center">
+          <img [src]="post.user.avatar || 'assets/default-avatar.png'" class="rounded-circle me-2" width="40" height="40" 
+               onerror="this.src='https://via.placeholder.com/40'">
+          <div>
+            <h5 class="mb-0">{{ post.user.name }}</h5>
+            <small class="text-muted">{{ post.created_at | date:'medium' }}</small>
+          </div>
+        </div>
+        <div class="card-body">
+          <p class="card-text">{{ post.content }}</p>
+          <img *ngIf="post.media_type === 'image' && post.media_url" [src]="post.media_url" class="img-fluid rounded mb-3"
+               onerror="this.style.display='none'">
+        </div>
+        <div class="card-footer">
+          <div class="d-flex justify-content-between mb-2">
+            <button class="btn btn-sm" [ngClass]="post.liked_by_me ? 'btn-primary' : 'btn-outline-primary'"
+                    (click)="likePost(post)" [disabled]="!authService.currentUserValue">
+              <i class="bi bi-heart-fill me-1"></i> {{ post.likes }} Likes
+            </button>
+            <span class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-chat-fill me-1"></i> {{ post.comments.length }} Comments
+            </span>
+          </div>
+          
+          <div *ngIf="post.comments.length > 0">
+            <hr>
+            <h6>Comments</h6>
+            <div *ngFor="let comment of post.comments" class="d-flex mb-2">
+              <img [src]="comment.user.avatar || 'assets/default-avatar.png'" class="rounded-circle me-2" width="30" height="30"
+                   onerror="this.src='https://via.placeholder.com/30'">
+              <div class="bg-light p-2 rounded flex-grow-1">
+                <div class="d-flex justify-content-between">
+                  <strong>{{ comment.user.name }}</strong>
+                  <small class="text-muted">{{ comment.created_at | date:'short' }}</small>
+                </div>
+                <p class="mb-0">{{ comment.content }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

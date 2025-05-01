@@ -1,0 +1,200 @@
+<div class="container mt-4">
+  <div class="row">
+    <!-- Left Side: Friends List and Requests -->
+    <div class="col-md-8">
+      <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+          <h4 class="m-0">Your Friends</h4>
+        </div>
+        <div class="card-body">
+          <!-- Loading indicator -->
+          <div *ngIf="loading.friends" class="text-center my-3">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Empty state -->
+          <div *ngIf="!loading.friends && friends.length === 0" class="text-center my-3">
+            <p class="lead">You don't have any friends yet.</p>
+            <p>Search for users to connect with them!</p>
+          </div>
+          
+          <!-- Friends list -->
+          <div *ngIf="!loading.friends && friends.length > 0" class="row row-cols-1 row-cols-md-2 g-4">
+            <div *ngFor="let friend of friends" class="col">
+              <div class="card h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center">
+                    <img [src]="friend.avatar || 'https://via.placeholder.com/50'" 
+                         class="rounded-circle me-3" width="50" height="50" alt="Profile Picture">
+                    <div>
+                      <h5 class="card-title mb-0">{{ friend.name }}</h5>
+                      <p class="card-text text-muted small">{{ friend.email }}</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex justify-content-between">
+                  <a [routerLink]="['/profile', friend.id]" class="btn btn-sm btn-outline-primary">View Profile</a>
+                  <button class="btn btn-sm btn-outline-danger" (click)="removeFriend(friend.id)">
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Friend Requests -->
+      <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+          <h4 class="m-0">Friend Requests</h4>
+        </div>
+        <div class="card-body">
+          <!-- Loading indicator -->
+          <div *ngIf="loading.requests" class="text-center my-3">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Tabs for received and sent requests -->
+          <ul class="nav nav-tabs mb-3" id="requestTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="received-tab" data-bs-toggle="tab" data-bs-target="#received" 
+                      type="button" role="tab" aria-controls="received" aria-selected="true">
+                Received 
+                <span *ngIf="friendRequests.received_requests?.length" class="badge bg-primary ms-1">
+                  {{ friendRequests.received_requests.length }}
+                </span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="sent-tab" data-bs-toggle="tab" data-bs-target="#sent" 
+                      type="button" role="tab" aria-controls="sent" aria-selected="false">
+                Sent 
+                <span *ngIf="friendRequests.sent_requests?.length" class="badge bg-primary ms-1">
+                  {{ friendRequests.sent_requests.length }}
+                </span>
+              </button>
+            </li>
+          </ul>
+          
+          <div class="tab-content" id="requestTabsContent">
+            <!-- Received requests -->
+            <div class="tab-pane fade show active" id="received" role="tabpanel" aria-labelledby="received-tab">
+              <div *ngIf="!loading.requests && (!friendRequests.received_requests || friendRequests.received_requests.length === 0)" 
+                   class="text-center my-3">
+                <p>No pending friend requests.</p>
+              </div>
+              
+              <div *ngIf="!loading.requests && friendRequests.received_requests && friendRequests.received_requests.length > 0" 
+                   class="list-group">
+                <div *ngFor="let request of friendRequests.received_requests" class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                      <img [src]="request.sender.avatar || 'https://via.placeholder.com/40'" 
+                           class="rounded-circle me-3" width="40" height="40" alt="Profile Picture">
+                      <div>
+                        <h6 class="mb-0">{{ request.sender.name }}</h6>
+                        <small class="text-muted">{{ request.sender.email }}</small>
+                      </div>
+                    </div>
+                    <div>
+                      <button class="btn btn-sm btn-success me-2" (click)="acceptFriendRequest(request.id)">
+                        Accept
+                      </button>
+                      <button class="btn btn-sm btn-danger" (click)="rejectFriendRequest(request.id)">
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Sent requests -->
+            <div class="tab-pane fade" id="sent" role="tabpanel" aria-labelledby="sent-tab">
+              <div *ngIf="!loading.requests && (!friendRequests.sent_requests || friendRequests.sent_requests.length === 0)" 
+                   class="text-center my-3">
+                <p>You haven't sent any friend requests.</p>
+              </div>
+              
+              <div *ngIf="!loading.requests && friendRequests.sent_requests && friendRequests.sent_requests.length > 0" 
+                   class="list-group">
+                <div *ngFor="let request of friendRequests.sent_requests" class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                      <img [src]="request.receiver.avatar || 'https://via.placeholder.com/40'" 
+                           class="rounded-circle me-3" width="40" height="40" alt="Profile Picture">
+                      <div>
+                        <h6 class="mb-0">{{ request.receiver.name }}</h6>
+                        <small class="text-muted">{{ request.receiver.email }}</small>
+                      </div>
+                    </div>
+                    <div>
+                      <span class="badge bg-secondary">Pending</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right Side: Search Users -->
+    <div class="col-md-4">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 class="m-0">Find Friends</h4>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="searchQuery" class="form-label">Search by name or email</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="searchQuery" [(ngModel)]="searchQuery" 
+                     placeholder="Search users..." (keyup.enter)="searchUsers()">
+              <button class="btn btn-primary" type="button" (click)="searchUsers()">
+                <i class="bi bi-search"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Loading indicator -->
+          <div *ngIf="loading.search" class="text-center my-3">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Search results -->
+          <div *ngIf="!loading.search && searchResults.length > 0" class="list-group mt-3">
+            <div *ngFor="let user of searchResults" class="list-group-item">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                  <img [src]="user.avatar || 'https://via.placeholder.com/40'" 
+                       class="rounded-circle me-3" width="40" height="40" alt="Profile Picture">
+                  <div>
+                    <h6 class="mb-0">{{ user.name }}</h6>
+                    <small class="text-muted">{{ user.email }}</small>
+                  </div>
+                </div>
+                <button class="btn btn-sm btn-primary" (click)="sendFriendRequest(user.id)">
+                  Add Friend
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- No results message -->
+          <div *ngIf="!loading.search && searchQuery && searchResults.length === 0" class="text-center my-3">
+            <p>No users found matching "{{ searchQuery }}".</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

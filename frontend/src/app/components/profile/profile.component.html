@@ -1,0 +1,71 @@
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8 mx-auto">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 class="m-0">Your Profile</h4>
+        </div>
+        <div class="card-body">
+          <!-- Loading indicator -->
+          <div *ngIf="loading" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Error message -->
+          <div *ngIf="error" class="alert alert-danger">
+            {{ error }}
+          </div>
+          
+          <!-- Success message -->
+          <div *ngIf="success" class="alert alert-success">
+            {{ success }}
+          </div>
+          
+          <!-- Profile form -->
+          <form *ngIf="user && !loading" [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+            <div class="row mb-4">
+              <div class="col-md-3 text-center">
+                <img [src]="user.avatar || 'https://via.placeholder.com/150'" 
+                     class="rounded-circle img-thumbnail" alt="Profile Picture" width="150" height="150">
+              </div>
+              <div class="col-md-9">
+                <div class="mb-3">
+                  <label for="name" class="form-label">Name</label>
+                  <input type="text" formControlName="name" class="form-control" 
+                         [ngClass]="{ 'is-invalid': profileForm.get('name')?.touched && profileForm.get('name')?.errors }" />
+                  <div *ngIf="profileForm.get('name')?.touched && profileForm.get('name')?.errors" class="invalid-feedback">
+                    <div *ngIf="profileForm.get('name')?.errors?.['required']">Name is required</div>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email</label>
+                  <input type="email" formControlName="email" class="form-control" 
+                         [ngClass]="{ 'is-invalid': profileForm.get('email')?.touched && profileForm.get('email')?.errors }" />
+                  <div *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.errors" class="invalid-feedback">
+                    <div *ngIf="profileForm.get('email')?.errors?.['required']">Email is required</div>
+                    <div *ngIf="profileForm.get('email')?.errors?.['email']">Enter a valid email</div>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="bio" class="form-label">Bio</label>
+                  <textarea formControlName="bio" class="form-control" rows="3" placeholder="Tell us about yourself"></textarea>
+                </div>
+                
+                <div class="d-grid">
+                  <button type="submit" [disabled]="profileForm.invalid || loading" class="btn btn-primary">
+                    <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+                    Update Profile
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

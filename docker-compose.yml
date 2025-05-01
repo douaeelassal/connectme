@@ -1,0 +1,70 @@
+version: '3'
+services:
+  # PHP Laravel Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: connectme-backend
+    restart: unless-stopped
+    volumes:
+      - ./backend:/var/www/html
+    ports:
+      - "8000:80"
+    networks:
+      - connectme-network
+    depends_on:
+      - db
+
+# Angular Frontend
+frontend:
+  build:
+    context: ./frontend
+    dockerfile: Dockerfile
+  container_name: connectme-frontend
+  restart: unless-stopped
+  volumes:
+    - ./frontend:/app
+    - /app/node_modules
+  ports:
+    - "4201:4201"  # Changed from 4200:4200 to avoid conflict
+  command: ng serve --host 0.0.0.0
+  networks:
+    - connectme-network
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: connectme-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: connectme
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_PASSWORD: password
+      MYSQL_USER: connectme
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - connectme-network
+
+  # phpMyAdmin for Database Management
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: connectme-phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - "8080:80"
+    networks:
+      - connectme-network
+    depends_on:
+      - db
+
+networks:
+  connectme-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
