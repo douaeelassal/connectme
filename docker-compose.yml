@@ -2,9 +2,7 @@ version: '3'
 services:
   # PHP Laravel Backend
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: anadouae1/connectme-backend:latest
     container_name: connectme-backend
     restart: unless-stopped
     volumes:
@@ -16,21 +14,19 @@ services:
     depends_on:
       - db
 
-# Angular Frontend
-frontend:
-  build:
-    context: ./frontend
-    dockerfile: Dockerfile
-  container_name: connectme-frontend
-  restart: unless-stopped
-  volumes:
-    - ./frontend:/app
-    - /app/node_modules
-  ports:
-    - "4201:4201"  # Changed from 4200:4200 to avoid conflict
-  command: ng serve --host 0.0.0.0
-  networks:
-    - connectme-network
+  # Angular Frontend
+  frontend:
+    image: anadouae1/connectme-frontend:latest
+    container_name: connectme-frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "4201:4201"  # Changed from 4200:4200 to avoid conflict
+    command: ng serve --host 0.0.0.0
+    networks:
+      - connectme-network
   # MySQL Database
   db:
     image: mysql:8.0
