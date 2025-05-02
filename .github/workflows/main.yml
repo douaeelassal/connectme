@@ -1,0 +1,74 @@
+name: ConnectMe CI/CD
+
+# Définit quand le workflow sera déclenché
+on:
+  # Se déclenche sur les push vers la branche main
+  push:
+    branches: [ main ]
+  # Se déclenche aussi sur les pull requests vers la branche main
+  pull_request:
+    branches: [ main ]
+  # Permet de déclencher ce workflow manuellement depuis l'interface GitHub
+  workflow_dispatch:
+
+# Les jobs à exécuter
+jobs:
+  build-and-test:
+    # Exécute sur la dernière version d'Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      # Récupère votre code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Configure Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'npm'
+
+      # Installe les dépendances
+      - name: Install dependencies
+        run: npm ci
+
+      # Exécute les tests (si vous en avez)
+      - name: Run tests
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+      # Construit l'application
+      - name: Build
+        run: npm run build --configuration=production
+
+      # Archive les artefacts de build
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: dist/
+
+  deploy:
+    # Ce job ne s'exécute que si le job build-and-test réussit
+    needs: build-and-test
+    
+    # Ne s'exécute que sur la branche main et lors d'un push (pas sur les PR)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Récupère les artefacts du build
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build
+          path: dist/
+
+      # Déploie sur GitHub Pages (solution simple et gratuite)
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist/connectme-frontend  # Ajustez ce chemin selon la structure de votre projet
+          branch: gh-pages
+          clean: true
