@@ -1,74 +1,103 @@
 name: ConnectMe CI/CD
 
-# Définit quand le workflow sera déclenché
+# Define when the workflow will be triggered
 on:
-  # Se déclenche sur les push vers la branche main
+  # Triggers on push to main branch
   push:
     branches: [ main ]
-  # Se déclenche aussi sur les pull requests vers la branche main
+  # Triggers on pull requests to main branch
   pull_request:
     branches: [ main ]
-  # Permet de déclencher ce workflow manuellement depuis l'interface GitHub
+  # Allows manual triggering from GitHub interface
   workflow_dispatch:
 
-# Les jobs à exécuter
+# Jobs to execute
 jobs:
   build-and-test:
-    # Exécute sur la dernière version d'Ubuntu
+    # Run on latest Ubuntu version
     runs-on: ubuntu-latest
-
+    
     steps:
-      # Récupère votre code
+      # Checkout your code
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      # Configure Node.js
+      
+      # Setup PHP
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, intl, pdo_mysql
+          coverage: xdebug
+      
+      # Validate composer.json and composer.lock files
+      - name: Validate composer files
+        run: composer validate --strict
+        working-directory: ./backend
+      
+      # Install PHP dependencies
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-progress
+        working-directory: ./backend
+      
+      # Run PHP tests if you have them
+      - name: Run PHP tests
+        run: composer test
+        working-directory: ./backend
+      
+      # Setup Node.js for frontend (if needed)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: 'npm'
-
-      # Installe les dépendances
-      - name: Install dependencies
+        working-directory: ./frontend
+      
+      # Install frontend dependencies (if needed)
+      - name: Install frontend dependencies
         run: npm ci
-
-      # Exécute les tests (si vous en avez)
-      - name: Run tests
-        run: npm test -- --watch=false --browsers=ChromeHeadless
-
-      # Construit l'application
-      - name: Build
-        run: npm run build --configuration=production
-
-      # Archive les artefacts de build
+        working-directory: ./frontend
+      
+      # Build frontend (if needed)
+      - name: Build frontend
+        run: npm run build
+        working-directory: ./frontend
+      
+      # Archive build artifacts
       - name: Archive build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: build
-          path: dist/
-
+          name: build-artifacts
+          path: |
+            ./frontend/dist/
+            ./backend/
+          retention-days: 5
+  
   deploy:
-    # Ce job ne s'exécute que si le job build-and-test réussit
+    # Only run if build-and-test succeeds
     needs: build-and-test
     
-    # Ne s'exécute que sur la branche main et lors d'un push (pas sur les PR)
+    # Only run on main branch and on push (not on PRs)
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     runs-on: ubuntu-latest
     
     steps:
-      # Récupère les artefacts du build
+      # Download build artifacts
       - name: Download build artifacts
         uses: actions/download-artifact@v3
         with:
-          name: build
-          path: dist/
-
-      # Déploie sur GitHub Pages (solution simple et gratuite)
-      - name: Deploy to GitHub Pages
+          name: build-artifacts
+          path: ./
+      
+      # Deploy to GitHub Pages (for frontend)
+      - name: Deploy frontend to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: dist/connectme-frontend  # Ajustez ce chemin selon la structure de votre projet
+          folder: ./frontend/dist
           branch: gh-pages
           clean: true
+      
+      # Add server deployment step here if needed
+      # This is where you would add steps to deploy the backend to your server
+      # For example, using FTP, SSH, or a hosting-specific deployment method
